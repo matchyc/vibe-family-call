@@ -399,6 +399,7 @@
         if (chain.length > 0 && wouldCycle(key)) return false;
         if (key !== 'h' && key !== 'w') return true;
         const g = getLastGender();
+        if (chain.length === 0) return true;
         if (key === 'h') return g === 'female';
         if (key === 'w') return g === 'male';
         return false;
