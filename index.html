@@ -170,8 +170,17 @@
     .footer-row {
       margin-top: 0.75rem;
       display: flex;
-      justify-content: flex-end;
+      justify-content: space-between;
+      align-items: center;
+      flex-wrap: wrap;
+      gap: 0.5rem;
     }
+    .footer-link {
+      font-size: 0.7rem;
+      color: var(--accent2);
+      text-decoration: none;
+    }
+    .footer-link:hover { text-decoration: underline; }
     .btn-settings {
       padding: 0.35rem 0.5rem;
       font-size: 0.8rem;
@@ -270,6 +279,7 @@
       <button type="button" class="btn btn-op" id="btnClear">清</button>
     </div>
     <div class="footer-row">
+      <a href="https://cloud.siliconflow.cn/i/0nfuBLrj" target="_blank" rel="noopener" class="footer-link">点击这里获取硅基流动代金券，帮助项目持续运行吧！</a>
       <button type="button" class="btn-settings" id="btnSettings" title="懂的人自然懂">⚙ 设置</button>
     </div>
   </div>
