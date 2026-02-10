@@ -1,0 +1,600 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>亲戚称呼计算器</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Noto+Serif+SC:wght@400;600&family=Noto+Sans+SC:wght@400;500&display=swap" rel="stylesheet" />
+  <style>
+    :root {
+      --bg: #f5f0e8;
+      --surface: #fffef9;
+      --ink: #2c2419;
+      --accent: #8b2942;
+      --accent2: #3d5c3d;
+      --muted: #6b5b4f;
+      --border: #ddd6cc;
+      --shadow: rgba(44, 36, 25, 0.08);
+      --radius: 12px;
+      --radius-btn: 10px;
+    }
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      min-height: 100vh;
+      font-family: 'Noto Sans SC', sans-serif;
+      background: var(--bg);
+      color: var(--ink);
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      padding: 1rem;
+    }
+    .calc {
+      width: 100%;
+      max-width: 380px;
+      background: var(--surface);
+      border-radius: var(--radius);
+      box-shadow: 0 8px 32px var(--shadow);
+      padding: 1.25rem;
+      border: 1px solid var(--border);
+    }
+    h1 {
+      font-family: 'Noto Serif SC', serif;
+      font-size: 1.35rem;
+      font-weight: 600;
+      margin: 0 0 0.15rem 0;
+      color: var(--ink);
+    }
+    .page-author {
+      font-size: 0.7rem;
+      color: var(--muted);
+      margin-bottom: 0.5rem;
+    }
+    .page-author a { color: var(--muted); text-decoration: none; }
+    .page-author a:hover { color: var(--accent2); text-decoration: underline; }
+    .subtitle {
+      font-size: 0.75rem;
+      color: var(--muted);
+      margin-bottom: 1rem;
+    }
+    .display {
+      min-height: 2.2em;
+      padding: 0.6rem 0.75rem;
+      background: #faf8f4;
+      border: 1px solid var(--border);
+      border-radius: var(--radius-btn);
+      font-size: 0.95rem;
+      color: var(--muted);
+      margin-bottom: 0.5rem;
+      line-height: 1.5;
+      transition: opacity 0.2s;
+    }
+    .display.empty { color: var(--border); }
+    .display .segment {
+      display: inline;
+      animation: fadeIn 0.25s ease;
+    }
+    @keyframes fadeIn { from { opacity: 0; transform: translateY(-2px); } to { opacity: 1; transform: translateY(0); } }
+    .result-row {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 0.5rem;
+      min-height: 2.8em;
+      padding: 0.5rem 0.75rem;
+      margin-bottom: 0.5rem;
+    }
+    .result-text {
+      font-family: 'Noto Serif SC', serif;
+      font-size: 1.25rem;
+      font-weight: 600;
+      color: var(--accent);
+      flex: 1;
+      min-height: 1.5em;
+    }
+    .result-text.typing { overflow: hidden; }
+    .result-hint {
+      font-size: 0.7rem;
+      color: var(--muted);
+      margin-top: 0.2rem;
+    }
+    .btn-more {
+      flex-shrink: 0;
+      padding: 0.35rem 0.6rem;
+      font-size: 0.75rem;
+      color: var(--accent2);
+      background: transparent;
+      border: 1px solid var(--accent2);
+      border-radius: 6px;
+      cursor: pointer;
+      transition: background 0.2s, transform 0.1s;
+    }
+    .btn-more:hover { background: rgba(61,92,61,0.1); }
+    .btn-more:active { transform: scale(0.98); }
+    .btn-more .arrow { display: inline-block; transition: transform 0.2s; }
+    .btn-more.expanded .arrow { transform: rotate(180deg); }
+    .explain-box {
+      max-height: 0;
+      overflow: hidden;
+      transition: max-height 0.3s ease;
+    }
+    .explain-box.open { max-height: 120px; }
+    .explain-inner {
+      padding: 0.5rem 0.75rem;
+      font-size: 0.8rem;
+      color: var(--muted);
+      line-height: 1.5;
+      background: #faf8f4;
+      border: 1px solid var(--border);
+      border-radius: var(--radius-btn);
+      margin-bottom: 0.75rem;
+    }
+    .btn-grid {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 0.5rem;
+    }
+    .btn {
+      padding: 0.65rem;
+      font-family: 'Noto Sans SC', sans-serif;
+      font-size: 0.95rem;
+      font-weight: 500;
+      border: 1px solid var(--border);
+      border-radius: var(--radius-btn);
+      background: var(--surface);
+      color: var(--ink);
+      cursor: pointer;
+      transition: transform 0.08s, box-shadow 0.08s, background 0.15s;
+    }
+    .btn:hover:not(:disabled) {
+      background: #f0ebe3;
+      box-shadow: 0 2px 6px var(--shadow);
+    }
+    .btn:active:not(:disabled) {
+      transform: scale(0.96);
+      box-shadow: 0 0 0 1px var(--border);
+    }
+    .btn:disabled {
+      opacity: 0.45;
+      cursor: not-allowed;
+    }
+    .btn-op {
+      background: #ebe5dc;
+      color: var(--accent2);
+    }
+    .btn-op:hover:not(:disabled) { background: #e0d9ce; }
+    .footer-row {
+      margin-top: 0.75rem;
+      display: flex;
+      justify-content: flex-end;
+    }
+    .btn-settings {
+      padding: 0.35rem 0.5rem;
+      font-size: 0.8rem;
+      color: var(--muted);
+      background: transparent;
+      border: none;
+      cursor: pointer;
+      border-radius: 6px;
+      transition: color 0.2s, background 0.2s;
+    }
+    .btn-settings:hover { color: var(--ink); background: #f0ebe3; }
+    .modal-overlay {
+      position: fixed;
+      inset: 0;
+      background: rgba(0,0,0,0.4);
+      display: none;
+      align-items: center;
+      justify-content: center;
+      z-index: 100;
+      padding: 1rem;
+    }
+    .modal-overlay.open { display: flex; }
+    .modal {
+      background: var(--surface);
+      border-radius: var(--radius);
+      padding: 1.25rem;
+      max-width: 360px;
+      width: 100%;
+      box-shadow: 0 12px 40px rgba(0,0,0,0.15);
+      border: 1px solid var(--border);
+    }
+    .modal h2 { font-size: 1rem; margin: 0 0 1rem 0; }
+    .modal label { display: block; font-size: 0.8rem; color: var(--muted); margin-bottom: 0.25rem; }
+    .modal input {
+      width: 100%;
+      padding: 0.5rem 0.6rem;
+      margin-bottom: 0.75rem;
+      border: 1px solid var(--border);
+      border-radius: 6px;
+      font-size: 0.9rem;
+    }
+    .modal-actions { display: flex; gap: 0.5rem; justify-content: flex-end; margin-top: 1rem; }
+    .modal-actions .btn { padding: 0.4rem 0.9rem; font-size: 0.85rem; }
+    .toast {
+      position: fixed;
+      bottom: 1.5rem;
+      left: 50%;
+      transform: translateX(-50%) translateY(100px);
+      padding: 0.5rem 0.9rem;
+      background: var(--ink);
+      color: var(--surface);
+      font-size: 0.8rem;
+      border-radius: 8px;
+      opacity: 0;
+      transition: transform 0.25s, opacity 0.25s;
+      z-index: 101;
+    }
+    .toast.show {
+      transform: translateX(-50%) translateY(0);
+      opacity: 1;
+    }
+    .loading-dot::after { content: ''; animation: dots 1.2s steps(4) infinite; }
+    @keyframes dots { 0%,20% { content: ''; } 40% { content: '.'; } 60% { content: '..'; } 80%,100% { content: '...'; } }
+  </style>
+</head>
+<body>
+  <div class="calc">
+    <p class="page-author">authored by <a href="https://github.com/matchyc" target="_blank" rel="noopener">matchyc</a></p>
+    <h1>亲戚称呼计算器</h1>
+    <p class="subtitle" id="subtitle">再也不怕叫错人</p>
+    <div class="display" id="display" aria-live="polite">从谁开始算？点一下试试</div>
+    <div class="result-row">
+      <div>
+        <div class="result-text" id="result"></div>
+        <div class="result-hint" id="resultHint"></div>
+      </div>
+      <button type="button" class="btn-more" id="btnMore" aria-expanded="false" style="display: none;">
+        更多 <span class="arrow">▼</span>
+      </button>
+    </div>
+    <div class="explain-box" id="explainBox">
+      <div class="explain-inner" id="explainInner"></div>
+    </div>
+    <div class="btn-grid">
+      <button type="button" class="btn" data-key="f">父</button>
+      <button type="button" class="btn" data-key="m">母</button>
+      <button type="button" class="btn" data-key="h">夫</button>
+      <button type="button" class="btn" data-key="w">妻</button>
+      <button type="button" class="btn" data-key="ob">兄</button>
+      <button type="button" class="btn" data-key="lb">弟</button>
+      <button type="button" class="btn" data-key="os">姐</button>
+      <button type="button" class="btn" data-key="ls">妹</button>
+      <button type="button" class="btn" data-key="s">子</button>
+      <button type="button" class="btn" data-key="d">女</button>
+      <button type="button" class="btn btn-op" id="btnBack">删</button>
+      <button type="button" class="btn btn-op" id="btnClear">清</button>
+    </div>
+    <div class="footer-row">
+      <button type="button" class="btn-settings" id="btnSettings" title="懂的人自然懂">⚙ 设置</button>
+    </div>
+  </div>
+
+  <div class="modal-overlay" id="modalOverlay">
+    <div class="modal">
+      <h2>API 设置</h2>
+      <label for="inputBaseUrl">Base URL</label>
+      <input type="text" id="inputBaseUrl" placeholder="https://api.openai.com/v1" />
+      <label for="inputApiKey">API Key</label>
+      <input type="password" id="inputApiKey" placeholder="sk-..." />
+      <div class="modal-actions">
+        <button type="button" class="btn" id="modalCancel">取消</button>
+        <button type="button" class="btn btn-op" id="modalSave">保存</button>
+      </div>
+    </div>
+  </div>
+
+  <div class="toast" id="toast"></div>
+
+  <script>
+    (function() {
+      const LABELS = { f: '父亲', m: '母亲', h: '丈夫', w: '妻子', ob: '兄', lb: '弟', os: '姐姐', ls: '妹妹', s: '儿子', d: '女儿' };
+      const MALE = new Set(['f','h','ob','lb','s']);
+      const FEMALE = new Set(['m','w','os','ls','d']);
+      const EMPTY_TIPS = ['从谁开始算？点一下试试', '比如：爸爸的妈妈的哥哥 → 舅外公', '过年走亲戚必备神器', '算不清辈分？不存在的'];
+      const LOADING_TIPS = ['正在翻家谱……', '查房中……', '算辈分呢，稍等'];
+      const SUBTITLES = ['再也不怕叫错人', '辈分杀手', '走亲访友救星'];
+
+      let chain = [];
+      let lastResult = { title: '', explain: '' };
+      let loadingTipIdx = 0;
+      let subtitleIdx = 0;
+
+      const displayEl = document.getElementById('display');
+      const resultEl = document.getElementById('result');
+      const resultHintEl = document.getElementById('resultHint');
+      const btnMore = document.getElementById('btnMore');
+      const explainBox = document.getElementById('explainBox');
+      const explainInner = document.getElementById('explainInner');
+      const btnBack = document.getElementById('btnBack');
+      const btnClear = document.getElementById('btnClear');
+      const btnSettings = document.getElementById('btnSettings');
+      const modalOverlay = document.getElementById('modalOverlay');
+      const inputBaseUrl = document.getElementById('inputBaseUrl');
+      const inputApiKey = document.getElementById('inputApiKey');
+      const modalCancel = document.getElementById('modalCancel');
+      const modalSave = document.getElementById('modalSave');
+      const toastEl = document.getElementById('toast');
+      const subtitleEl = document.getElementById('subtitle');
+
+      function getLastGender() {
+        if (chain.length === 0) return null;
+        const last = chain[chain.length - 1];
+        if (last === 'xb' || last === 'xs') return null;
+        if (MALE.has(last)) return 'male';
+        if (FEMALE.has(last)) return 'female';
+        return null;
+      }
+
+      function canAppend(key) {
+        if (key !== 'h' && key !== 'w') return true;
+        const g = getLastGender();
+        if (key === 'h') return g === 'female';
+        if (key === 'w') return g === 'male';
+        return false;
+      }
+
+      function chainToText() {
+        if (chain.length === 0) return '';
+        return '我的' + chain.map(k => LABELS[k] || k).join('的');
+      }
+
+      function renderDisplay() {
+        if (chain.length === 0) {
+          const tip = EMPTY_TIPS[Math.floor(Math.random() * EMPTY_TIPS.length)];
+          displayEl.textContent = tip;
+          displayEl.classList.add('empty');
+          return;
+        }
+        displayEl.classList.remove('empty');
+        displayEl.innerHTML = '<span class="segment">我的</span>' + chain.map(k => {
+          const label = LABELS[k] || k;
+          return '<span class="segment">' + label + '</span>的';
+        }).join('').replace(/的$/, '');
+      }
+
+      function updateButtons() {
+        document.querySelectorAll('.btn[data-key]').forEach(btn => {
+          const key = btn.getAttribute('data-key');
+          btn.disabled = !canAppend(key);
+        });
+      }
+
+      function showToast(msg) {
+        toastEl.textContent = msg;
+        toastEl.classList.add('show');
+        clearTimeout(showToast._t);
+        showToast._t = setTimeout(() => toastEl.classList.remove('show'), 2200);
+      }
+
+      function showResult(title, explain) {
+        lastResult = { title: title || '', explain: explain || '' };
+        resultEl.textContent = '';
+        resultEl.classList.remove('typing');
+        resultHintEl.textContent = '';
+        if (!title) {
+          btnMore.style.display = 'none';
+          explainBox.classList.remove('open');
+          explainInner.textContent = '';
+          return;
+        }
+        resultEl.textContent = title;
+        resultEl.classList.add('typing');
+        resultHintEl.textContent = '记住没？下次别叫错';
+        if (explain) {
+          btnMore.style.display = '';
+          btnMore.setAttribute('aria-expanded', 'false');
+          explainInner.textContent = explain;
+          explainBox.classList.remove('open');
+        } else {
+          btnMore.style.display = 'none';
+          explainBox.classList.remove('open');
+        }
+      }
+
+      function setLoading(on) {
+        if (on) {
+          const tip = LOADING_TIPS[loadingTipIdx % LOADING_TIPS.length];
+          loadingTipIdx++;
+          resultEl.innerHTML = '<span class="loading-dot">' + tip + '</span>';
+          resultEl.classList.add('typing');
+          resultHintEl.textContent = '';
+        }
+      }
+
+      function parseLLMResponse(text) {
+        let title = '';
+        let explain = '';
+        const t = (text || '').trim();
+        const titleMatch = t.match(/称呼[：:]\s*([^\n]+)/);
+        const explainMatch = t.match(/解释[：:]\s*([^\n]+)/);
+        if (titleMatch) title = titleMatch[1].trim();
+        if (explainMatch) explain = explainMatch[1].trim();
+        if (!title && t) title = t.split('\n')[0].trim();
+        return { title, explain };
+      }
+
+      const LLM_MODEL = 'Qwen/Qwen3-30B-A3B-Instruct-2507';
+
+      async function verifyApi(base, key) {
+        const url = base.replace(/\/$/, '') + '/chat/completions';
+        const res = await fetch(url, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': 'Bearer ' + key
+          },
+          body: JSON.stringify({
+            model: LLM_MODEL,
+            messages: [{ role: 'user', content: '说一个字：好' }],
+            max_tokens: 10
+          })
+        });
+        const data = await res.json();
+        if (data.error) throw new Error(data.error.message || '验证失败');
+        return true;
+      }
+
+      async function fetchCall() {
+        const base = (localStorage.getItem('llm_base_url') || '').trim() || 'https://api.openai.com/v1';
+        const key = (localStorage.getItem('llm_api_key') || '').trim();
+        if (!key) {
+          setLoading(false);
+          showToast('请先在设置里填写 API Key');
+          return;
+        }
+        const text = chainToText();
+        const url = base.replace(/\/$/, '') + '/chat/completions';
+        const body = {
+          model: LLM_MODEL,
+          messages: [
+            {
+              role: 'user',
+              content: '根据关系链「' + text + '」，请按以下格式回答我该怎么称呼对方，第一行是称呼，第二行是简短解释（可选）：\n称呼：xxx\n解释：xxx。'
+            }
+          ],
+          max_tokens: 200
+        };
+        setLoading(true);
+        try {
+          const res = await fetch(url, {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+              'Authorization': 'Bearer ' + key
+            },
+            body: JSON.stringify(body)
+          });
+          const data = await res.json();
+          setLoading(false);
+          if (data.error) {
+            showResult('', '');
+            showToast(data.error.message || '请求失败');
+            return;
+          }
+          const content = (data.choices && data.choices[0] && data.choices[0].message && data.choices[0].message.content) || '';
+          const { title, explain } = parseLLMResponse(content);
+          showResult(title, explain);
+        } catch (e) {
+          setLoading(false);
+          showResult('', '');
+          showToast('网络错误：' + (e.message || '请检查 Base URL'));
+        }
+      }
+
+      function onChainChange() {
+        renderDisplay();
+        updateButtons();
+        if (chain.length > 0) fetchCall();
+        else showResult('', '');
+      }
+
+      document.querySelectorAll('.btn[data-key]').forEach(btn => {
+        btn.addEventListener('click', () => {
+          const key = btn.getAttribute('data-key');
+          if (!canAppend(key)) return;
+          chain.push(key);
+          onChainChange();
+        });
+      });
+
+      btnBack.addEventListener('click', () => {
+        if (chain.length > 0) {
+          chain.pop();
+          onChainChange();
+        }
+      });
+
+      btnClear.addEventListener('click', () => {
+        if (chain.length > 0) {
+          chain = [];
+          onChainChange();
+        }
+      });
+
+      btnMore.addEventListener('click', () => {
+        const open = explainBox.classList.toggle('open');
+        btnMore.setAttribute('aria-expanded', open);
+        btnMore.classList.toggle('expanded', open);
+      });
+
+      btnSettings.addEventListener('click', () => {
+        inputBaseUrl.value = localStorage.getItem('llm_base_url') || '';
+        inputApiKey.value = localStorage.getItem('llm_api_key') || '';
+        modalOverlay.classList.add('open');
+      });
+
+      modalCancel.addEventListener('click', () => modalOverlay.classList.remove('open'));
+      modalSave.addEventListener('click', async () => {
+        const base = inputBaseUrl.value.trim();
+        const key = inputApiKey.value.trim();
+        if (!base || !key) {
+          showToast('请填写 Base URL 和 API Key');
+          return;
+        }
+        modalSave.disabled = true;
+        modalSave.textContent = '验证中…';
+        try {
+          await verifyApi(base, key);
+          localStorage.setItem('llm_base_url', base);
+          localStorage.setItem('llm_api_key', key);
+          modalOverlay.classList.remove('open');
+          showToast('已保存，验证通过');
+        } catch (e) {
+          showToast('验证失败：' + (e.message || '请检查 Base URL、API Key 与模型可用性'));
+        }
+        modalSave.disabled = false;
+        modalSave.textContent = '保存';
+      });
+      modalOverlay.addEventListener('click', e => { if (e.target === modalOverlay) modalOverlay.classList.remove('open'); });
+
+      setInterval(() => {
+        subtitleIdx = (subtitleIdx + 1) % SUBTITLES.length;
+        subtitleEl.textContent = SUBTITLES[subtitleIdx];
+      }, 4000);
+
+      const sameKeyCount = { key: null, count: 0 };
+      const keyToDigit = { f: '1', m: '2', h: '3', w: '4', ob: '5', lb: '6', os: '7', ls: '8', s: '9', d: '0' };
+      const digitToKey = { '1': 'f', '2': 'm', '3': 'h', '4': 'w', '5': 'ob', '6': 'lb', '7': 'os', '8': 'ls', '9': 's', '0': 'd' };
+      document.querySelectorAll('.btn[data-key]').forEach(btn => {
+        const key = btn.getAttribute('data-key');
+        btn.addEventListener('click', () => {
+          if (sameKeyCount.key === key) sameKeyCount.count++; else { sameKeyCount.key = key; sameKeyCount.count = 1; }
+          if (sameKeyCount.count >= 5 && key === 'f') showToast('往上数五代，那是曾曾曾祖父');
+        });
+      });
+      btnBack.addEventListener('click', () => { sameKeyCount.key = null; sameKeyCount.count = 0; });
+      btnClear.addEventListener('click', () => { sameKeyCount.key = null; sameKeyCount.count = 0; });
+
+      document.addEventListener('keydown', (e) => {
+        if (e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA') return;
+        const key = digitToKey[e.key];
+        if (key && canAppend(key)) {
+          chain.push(key);
+          onChainChange();
+          e.preventDefault();
+        } else if (e.key === 'Backspace') {
+          if (chain.length > 0) { chain.pop(); onChainChange(); e.preventDefault(); }
+        }
+      });
+
+      updateButtons();
+      const params = new URLSearchParams(location.search);
+      const chainParam = params.get('chain');
+      if (chainParam) {
+        const allowed = new Set(['f','m','h','w','ob','lb','os','ls','s','d','xb','xs']);
+        chain = chainParam.split(',').filter(k => allowed.has(k));
+        if (chain.length > 0) {
+          renderDisplay();
+          updateButtons();
+          fetchCall();
+        }
+      }
+    })();
+  </script>
+</body>
+</html>
