@@ -278,7 +278,7 @@
     <div class="modal">
       <h2>API 设置</h2>
       <label for="inputBaseUrl">Base URL</label>
-      <input type="text" id="inputBaseUrl" placeholder="https://api.openai.com/v1" />
+      <input type="text" id="inputBaseUrl" placeholder="留空或 /v1 使用同源代理（无需 Key）" />
       <label for="inputApiKey">API Key</label>
       <input type="password" id="inputApiKey" placeholder="sk-..." />
       <div class="modal-actions">
@@ -420,14 +420,23 @@
 
       const LLM_MODEL = 'Qwen/Qwen3-30B-A3B-Instruct-2507';
 
+      function getBaseUrl() {
+        return (localStorage.getItem('llm_base_url') || '').trim() || '/v1';
+      }
+
+      function isProxyMode() {
+        const base = getBaseUrl().trim();
+        return !base || base.startsWith('/');
+      }
+
       async function verifyApi(base, key) {
-        const url = base.replace(/\/$/, '') + '/chat/completions';
+        const b = (base || '/v1').trim();
+        const url = b.replace(/\/$/, '') + '/chat/completions';
+        const headers = { 'Content-Type': 'application/json' };
+        if (key && !b.startsWith('/')) headers['Authorization'] = 'Bearer ' + key;
         const res = await fetch(url, {
           method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-            'Authorization': 'Bearer ' + key
-          },
+          headers,
           body: JSON.stringify({
             model: LLM_MODEL,
             messages: [{ role: 'user', content: '说一个字：好' }],
@@ -440,15 +449,15 @@
       }
 
       async function fetchCall() {
-        const base = (localStorage.getItem('llm_base_url') || '').trim() || 'https://api.openai.com/v1';
+        const base = getBaseUrl();
         const key = (localStorage.getItem('llm_api_key') || '').trim();
-        if (!key) {
+        if (!isProxyMode() && !key) {
           setLoading(false);
           showToast('请先在设置里填写 API Key');
           return;
         }
         const text = chainToText();
-        const url = base.replace(/\/$/, '') + '/chat/completions';
+        const url = (base || '/v1').replace(/\/$/, '') + '/chat/completions';
         const body = {
           model: LLM_MODEL,
           messages: [
@@ -459,14 +468,13 @@
           ],
           max_tokens: 200
         };
+        const headers = { 'Content-Type': 'application/json' };
+        if (key && !(base || '').startsWith('/')) headers['Authorization'] = 'Bearer ' + key;
         setLoading(true);
         try {
           const res = await fetch(url, {
             method: 'POST',
-            headers: {
-              'Content-Type': 'application/json',
-              'Authorization': 'Bearer ' + key
-            },
+            headers,
             body: JSON.stringify(body)
           });
           const data = await res.json();
@@ -530,18 +538,19 @@
 
       modalCancel.addEventListener('click', () => modalOverlay.classList.remove('open'));
       modalSave.addEventListener('click', async () => {
-        const base = inputBaseUrl.value.trim();
+        const base = inputBaseUrl.value.trim() || '/v1';
         const key = inputApiKey.value.trim();
-        if (!base || !key) {
-          showToast('请填写 Base URL 和 API Key');
+        const useProxy = base.startsWith('/');
+        if (!useProxy && !key) {
+          showToast('使用自填 API 时请填写 API Key');
           return;
         }
         modalSave.disabled = true;
         modalSave.textContent = '验证中…';
         try {
-          await verifyApi(base, key);
+          await verifyApi(base, useProxy ? '' : key);
           localStorage.setItem('llm_base_url', base);
-          localStorage.setItem('llm_api_key', key);
+          localStorage.setItem('llm_api_key', useProxy ? '' : key);
           modalOverlay.classList.remove('open');
           showToast('已保存，验证通过');
         } catch (e) {

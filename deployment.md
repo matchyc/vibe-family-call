@@ -19,7 +19,7 @@
    ```bash
    cd /path/to/vibe-family-call
    git init
-   git add index.html README.md
+   git add index.html README.md deployment.md functions/
    git commit -m "init"
    git branch -M main
    git remote add origin https://github.com/你的用户名/vibe-family-call.git
@@ -33,21 +33,36 @@
 
 3. 等一两分钟，访问：`https://你的用户名.github.io/vibe-family-call/`
 
-### 方式二：Cloudflare Pages（免费，全球 CDN）
+### 方式二：Cloudflare Pages + Functions（推荐，开源箱即用）
 
-1. **代码先推到 GitHub**（同上），或本地用 Wrangler 上传。
+部署后页面和 API 代理同域名，访客**无需配置**即可使用。
+
+1. **代码推到 GitHub**（同上），确保仓库包含 `functions/` 目录。
 
 2. **登录 [Cloudflare Dashboard](https://dash.cloudflare.com) → Workers & Pages → Create application → Pages → Connect to Git**
    - 选你的仓库（如 `vibe-family-call`）
    - **Build command** 留空
-   - **Build output directory** 填：`/`（表示根目录就是站点）
+   - **Build output directory** 填：`/`（根目录）
    - 点 **Save and Deploy**
 
-3. 部署完成后会得到一个地址，例如：`https://vibe-family-call.xxx.pages.dev`
+3. **配置环境变量**（提供公共 API 时必填）
+   - 进入该 Pages 项目 → **Settings** → **Environment variables**
+   - 添加变量（Production 环境）：
+     - `SILICONFLOW_API_KEY`：你的 SiliconFlow API Key，勾选 **Encrypt**
+     - `SILICONFLOW_BASE_URL`（可选）：默认 `https://api.siliconflow.cn/v1`
+   - 保存后会自动触发重新部署
+
+4. 部署完成后访问：`https://vibe-family-call.xxx.pages.dev`  
+   默认 Base URL 为 `/v1`，请求会走同源下的 `functions/v1/chat/completions.js`，无需在设置里填 Key。
+
+### 其他方式：GitHub Pages / 纯静态 Cloudflare Pages
+
+若只部署静态页（不含 `functions/`），访客需在设置中填写 SiliconFlow 的 Base URL 和 API Key，或使用其他自建代理。
 
 ### 注意
 
-- API Key 和 Base URL 只存在**用户浏览器**的 localStorage 里，每个访客需要自己在页面里填一次。
+- **Cloudflare Pages + Functions**：API Key 存于 Cloudflare 环境变量，访客开箱即用，无需填任何配置。
+- **纯静态部署**：Base URL 和 API Key 只存在用户浏览器 localStorage，每个访客需在设置里填一次。
 - 若用 HTTPS 页面调用的 API 是 HTTP，浏览器可能拦截（混合内容），建议 API 也使用 HTTPS。
 
 ## 本地

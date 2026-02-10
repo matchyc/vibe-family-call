@@ -37,9 +37,9 @@
 
 站点已部署，打开即可用。
 
-1. 点右下角 **⚙ 设置**，填 **Base URL** 和 **API Key**。  
-   **仅支持 [SiliconFlow](https://siliconflow.cn/) 的 API**，默认使用模型 **Qwen/Qwen3-Next-80B-A3B-Instruct**。在 SiliconFlow 控制台申请 API Key 后，Base URL 填其提供的接口地址即可，保存时会验证一次可用性。
-2. 回到页面，从「父」「母」开始点，关系链会实时显示；有结果后可以点 **更多** 看解释。
+1. 若部署方式为 **Cloudflare Pages + Functions**（含 `functions/` 目录）：**无需任何配置**，直接点「父」「母」开始用，API 走同源代理。
+2. 若为纯静态部署：点右下角 **⚙ 设置**，填 **Base URL** 和 **API Key**（仅支持 [SiliconFlow](https://siliconflow.cn/) 的 API，默认模型 Qwen），保存时会验证一次可用性。
+3. 回到页面，从「父」「母」开始点，关系链会实时显示；有结果后可以点 **更多** 看解释。
 
 自行部署见 **[deployment.md](./deployment.md)**。
 
