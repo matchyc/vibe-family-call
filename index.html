@@ -167,6 +167,14 @@
       color: var(--accent2);
     }
     .btn-op:hover:not(:disabled) { background: #e0d9ce; }
+    .btn-eq {
+      background: var(--accent);
+      color: var(--surface);
+      font-size: 1.1rem;
+      font-weight: 600;
+    }
+    .btn-eq:hover:not(:disabled) { background: #a03050; }
+    .btn-eq:disabled { opacity: 0.5; }
     .footer-row {
       margin-top: 0.75rem;
       display: flex;
@@ -283,6 +291,7 @@
       <button type="button" class="btn" data-key="d">女</button>
       <button type="button" class="btn btn-op" id="btnBack">删</button>
       <button type="button" class="btn btn-op" id="btnClear">清</button>
+      <button type="button" class="btn btn-eq" id="btnEq">=</button>
     </div>
     <div class="footer-row">
       <span class="footer-love">本项目靠 <a href="https://github.com/matchyc" target="_blank" rel="noopener">@matchyc</a> 用爱发电</span>
@@ -329,6 +338,7 @@
       const explainInner = document.getElementById('explainInner');
       const btnBack = document.getElementById('btnBack');
       const btnClear = document.getElementById('btnClear');
+      const btnEq = document.getElementById('btnEq');
       const btnSettings = document.getElementById('btnSettings');
       const modalOverlay = document.getElementById('modalOverlay');
       const inputBaseUrl = document.getElementById('inputBaseUrl');
@@ -347,7 +357,46 @@
         return null;
       }
 
+      const SIMPLIFY_RULES = [
+        [['f','w'], ['m']], [['m','h'], ['f']],
+        [['h','w'], []], [['w','h'], []],
+        [['f','s'], ['xb']], [['f','d'], ['xs']], [['m','s'], ['xb']], [['m','d'], ['xs']],
+        [['s','f'], []], [['s','m'], ['w']], [['d','f'], []], [['d','m'], ['h']],
+        [['ob','f'], ['f']], [['lb','f'], ['f']], [['os','f'], ['f']], [['ls','f'], ['f']],
+        [['ob','m'], ['m']], [['lb','m'], ['m']], [['os','m'], ['m']], [['ls','m'], ['m']],
+        [['s','ob'], ['s']], [['s','lb'], ['s']], [['d','os'], ['d']], [['d','ls'], ['d']],
+        [['ob','lb'], ['lb']], [['lb','ob'], ['ob']], [['os','ls'], ['ls']], [['ls','os'], ['os']],
+        [['ob','ob'], ['ob']], [['lb','lb'], ['lb']], [['os','os'], ['os']], [['ls','ls'], ['ls']],
+        [['ob','os'], ['xs']], [['ob','ls'], ['xs']], [['lb','os'], ['xs']], [['lb','ls'], ['xs']],
+        [['os','ob'], ['xb']], [['os','lb'], ['xb']], [['ls','ob'], ['xb']], [['ls','lb'], ['xb']],
+        [['h','s'], ['s']], [['h','d'], ['d']], [['w','s'], ['s']], [['w','d'], ['d']]
+      ];
+
+      function simplify(arr) {
+        let a = [...arr];
+        let changed = true;
+        while (changed) {
+          changed = false;
+          for (const [pat, repl] of SIMPLIFY_RULES) {
+            if (a.length >= pat.length && pat.every((p, i) => a[a.length - pat.length + i] === p)) {
+              a = a.slice(0, -pat.length).concat(repl);
+              changed = true;
+              break;
+            }
+          }
+        }
+        return a;
+      }
+
+      function wouldCycle(key) {
+        const after = simplify(chain.concat(key));
+        if (after.length === 0) return true;
+        if (after.length === 1 && (after[0] === 'xb' || after[0] === 'xs')) return true;
+        return false;
+      }
+
       function canAppend(key) {
+        if (chain.length > 0 && wouldCycle(key)) return false;
         if (key !== 'h' && key !== 'w') return true;
         const g = getLastGender();
         if (key === 'h') return g === 'female';
@@ -379,6 +428,7 @@
           const key = btn.getAttribute('data-key');
           btn.disabled = !canAppend(key);
         });
+        if (btnEq) btnEq.disabled = chain.length === 0;
       }
 
       function showToast(msg) {
@@ -514,8 +564,7 @@
       function onChainChange() {
         renderDisplay();
         updateButtons();
-        if (chain.length > 0) fetchCall();
-        else showResult('', '');
+        showResult('', '');
       }
 
       document.querySelectorAll('.btn[data-key]').forEach(btn => {
@@ -539,6 +588,10 @@
           chain = [];
           onChainChange();
         }
+      });
+
+      btnEq.addEventListener('click', () => {
+        if (chain.length > 0) fetchCall();
       });
 
       btnMore.addEventListener('click', () => {
@@ -605,6 +658,8 @@
           e.preventDefault();
         } else if (e.key === 'Backspace') {
           if (chain.length > 0) { chain.pop(); onChainChange(); e.preventDefault(); }
+        } else if (e.key === 'Enter') {
+          if (chain.length > 0) { fetchCall(); e.preventDefault(); }
         }
       });
 
