@@ -1,5 +1,7 @@
 # 亲戚称呼计算器 · Vibe Family Call
 
+**[👉 在线使用](https://vibe-family-call.pages.dev/)**
+
 > 过年走亲戚，再也不会对着「我爸的妈的哥」愣三秒。
 
 一个极简的 Web 小工具：**用按钮点出关系链，让 AI 告诉你该叫啥**。  
